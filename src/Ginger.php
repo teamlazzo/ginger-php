@@ -4,13 +4,14 @@ namespace GingerPayments\Payment;
 
 use GuzzleHttp\Client as HttpClient;
 use Assert\Assertion as Guard;
+use GuzzleHttp\RequestOptions as GuzzleHttpRequestOptions;
 
 final class Ginger
 {
     /**
      * The library version.
      */
-    const CLIENT_VERSION = '1.2.4';
+    const CLIENT_VERSION = 'teamlazzo-1.2.4';
 
     /**
      * The API version.
@@ -35,10 +36,10 @@ final class Ginger
             'Ginger API key is invalid: '.$apiKey
         );
 
-        return new Client(
+/*        return new Client(
             new HttpClient(
                 [
-                    'base_url' => [self::ENDPOINT, ['version' => self::API_VERSION]],
+                    'base_uri' => [self::ENDPOINT, ['version' => self::API_VERSION]],
                     'defaults' => [
                         'headers' => [
                             'User-Agent' => 'ginger-php/'.self::CLIENT_VERSION,
@@ -46,6 +47,21 @@ final class Ginger
                         ],
                         'auth' => [$apiKey, '']
                     ]
+                ]
+            )
+        );*/
+        return new Client(
+            new HttpClient(
+                [
+                    'base_uri' => self::buildUrl(),
+                    'allow_redirects' => false,
+                    GuzzleHttpRequestOptions::TIMEOUT => 0,
+                    GuzzleHttpRequestOptions::AUTH => [$apiKey, ''],
+                    GuzzleHttpRequestOptions::HEADERS => [
+                        'User-Agent' => 'ginger-php/'.self::CLIENT_VERSION,
+                        'X-PHP-Version' => PHP_VERSION,
+                        'Accept'     => 'application/json',
+                    ],
                 ]
             )
         );
@@ -60,5 +76,9 @@ final class Ginger
     public static function apiKeyToUuid($apiKey)
     {
         return preg_replace('/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/', '$1-$2-$3-$4-$5', $apiKey);
+    }
+
+    public static function buildUrl($version = Ginger::API_VERSION, $endpoint = Ginger::ENDPOINT) {
+        return str_replace('{version}', $version, $endpoint);
     }
 }

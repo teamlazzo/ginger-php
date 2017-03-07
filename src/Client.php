@@ -16,12 +16,19 @@ final class Client
      */
     private $httpClient;
 
+    /**$httpClient
+     * @var array
+     */
+    private $defaultOptions;
+
     /**
      * @param HttpClient $httpClient
+     * @param array $configs
      */
-    public function __construct(HttpClient $httpClient)
+    public function __construct(HttpClient $httpClient, array $configs = array())
     {
         $this->httpClient = $httpClient;
+        $this->defaultOptions = $configs;
     }
 
     /**
@@ -32,7 +39,7 @@ final class Client
      */
     public function useBundledCA()
     {
-        $this->httpClient->setDefaultOption(
+        $this->setDefaultOption(
             'verify',
             realpath(dirname(__FILE__).'/../assets/cacert.pem')
         );
@@ -47,7 +54,7 @@ final class Client
     {
         try {
             return Issuers::fromArray(
-                $this->httpClient->get('ideal/issuers/')->json()
+                $this->httpClient->get('ideal/issuers/', $this->defaultOptions)->json()
             );
         } catch (RequestException $exception) {
             throw new ClientException(
@@ -324,7 +331,7 @@ final class Client
     {
         try {
             return Order::fromArray(
-                $this->httpClient->get("orders/$id")->json()
+                $this->httpClient->get("orders/$id", $this->defaultOptions)->json()
             );
         } catch (RequestException $exception) {
             if ($exception->getCode() == 404) {
@@ -358,15 +365,16 @@ final class Client
     private function postOrder(Order $order)
     {
         try {
+            $options = [
+                'timeout' => 3,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => json_encode(
+                    ArrayFunctions::withoutNullValues($order->toArray())
+                )
+            ];
             $response = $this->httpClient->post(
                 'orders/',
-                [
-                    'timeout' => 3,
-                    'headers' => ['Content-Type' => 'application/json'],
-                    'body' => json_encode(
-                        ArrayFunctions::withoutNullValues($order->toArray())
-                    )
-                ]
+                $options + $this->defaultOptions
             );
         } catch (RequestException $exception) {
             throw new ClientException(
@@ -388,13 +396,14 @@ final class Client
     private function putOrder(Order $order)
     {
         try {
+            $options = [
+                "timeout" => 3,
+                "json" => ArrayFunctions::withoutNullValues($order->toArray())
+            ];
             return Order::fromArray(
                 $this->httpClient->put(
                     "orders/".$order->id()."/",
-                    [
-                        "timeout" => 3,
-                        "json" => ArrayFunctions::withoutNullValues($order->toArray())
-                    ]
+                    $options + $this->defaultOptions
                 )->json()
             );
         } catch (RequestException $exception) {
@@ -407,5 +416,15 @@ final class Client
                 $exception
             );
         }
+    }
+
+    /**
+     * @param $key
+     * @param $value
+     * @todo handle array values
+     */
+    private function setDefaultOption($key, $value)
+    {
+        $this->defaultOptions[$key] = $value;
     }
 }
