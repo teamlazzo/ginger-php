@@ -19,20 +19,25 @@ final class GingerTest extends \PHPUnit_Framework_TestCase
 
         /** @var \GuzzleHttp\Client $httpClient */
         $httpClient = $reflectionProperty->getValue($client);
+
+        $expectedUrl = Ginger::buildUrl();
+        $uri = $httpClient->getConfig('base_uri');
+
         $this->assertEquals(
-            str_replace('{version}', Ginger::API_VERSION, Ginger::ENDPOINT),
-            $httpClient->getBaseUrl()
+            $expectedUrl,
+            sprintf("%s://%s%s", $uri->getScheme(), $uri->getHost(), $uri->getPath())
         );
         $this->assertEquals(
             [
                 'User-Agent' =>  'ginger-php/' . Ginger::CLIENT_VERSION,
-                'X-PHP-Version' =>  PHP_VERSION
+                'X-PHP-Version' =>  PHP_VERSION,
+                'Accept'     => 'application/json'
             ],
-            $httpClient->getDefaultOption('headers')
+            $httpClient->getConfig('headers')
         );
         $this->assertEquals(
             ['f47ac10b58cc4372a5670e02b2c3d479', ''],
-            $httpClient->getDefaultOption('auth')
+            $httpClient->getConfig('auth')
         );
     }
 

@@ -35,24 +35,11 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function itShouldVerifySSLUsingBundledCA()
-    {
-        $this->httpClient->shouldReceive('setDefaultOption')
-            ->once()
-            ->with('verify', realpath(dirname(__FILE__).'/../assets/cacert.pem'))
-            ->andReturn(null);
-
-        $this->client->useBundledCA();
-    }
-
-    /**
-     * @test
-     */
     public function itShouldGetIdealIssuers()
     {
         $this->httpClient->shouldReceive('get')
             ->once()
-            ->with('ideal/issuers/')
+            ->with('ideal/issuers/', array('verify' => realpath(dirname(__FILE__).'/../assets/cacert.pem')))
             ->andReturn($this->httpResponse);
 
         $this->httpResponse->shouldReceive('json')
@@ -67,6 +54,8 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
                 ]
             );
 
+        $this->client->useBundledCA();
+
         $this->assertInstanceOf(
             'GingerPayments\Payment\Ideal\Issuers',
             $this->client->getIdealIssuers()
@@ -80,8 +69,8 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
     {
         $this->httpClient->shouldReceive('get')
             ->once()
-            ->with('ideal/issuers/')
-            ->andThrow(new HttpClientException('Something happened', m::mock('GuzzleHttp\Message\Request')));
+            ->with('ideal/issuers/', array())
+            ->andThrow(new HttpClientException('Something happened', m::mock('GuzzleHttp\Psr7\Request')));
 
         $this->setExpectedException('GingerPayments\Payment\Client\ClientException');
         $this->client->getIdealIssuers();
@@ -404,8 +393,8 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
             'return_url' => "http://example.com",
         ];
 
-        $request = m::mock('GuzzleHttp\Message\Request');
-        $response = m::mock('GuzzleHttp\Message\Response');
+        $request = m::mock('GuzzleHttp\Psr7\Request');
+        $response = m::mock('GuzzleHttp\Psr7\Response');
         $response->shouldReceive('getStatusCode')->andReturn(404);
 
         $this->httpClient->shouldReceive('put')
@@ -432,7 +421,7 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
             'return_url' => "http://example.com",
         ];
 
-        $request = m::mock('GuzzleHttp\Message\Request');
+        $request = m::mock('GuzzleHttp\Psr7\Request');
 
         $this->httpClient->shouldReceive('put')
             ->once()
@@ -500,7 +489,7 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
     {
         $this->httpClient->shouldReceive('post')
             ->once()
-            ->andThrow(new HttpClientException('Something happened', m::mock('GuzzleHttp\Message\Request')));
+            ->andThrow(new HttpClientException('Something happened', m::mock('GuzzleHttp\Psr7\Request')));
 
         $this->setExpectedException('GingerPayments\Payment\Client\ClientException');
         $this->client->createOrder(1234, 'EUR', 'credit-card');
@@ -513,7 +502,7 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
     {
         $this->httpClient->shouldReceive('get')
             ->once()
-            ->with('orders/123456')
+            ->with('orders/123456', array())
             ->andReturn($this->httpResponse);
 
         $this->httpResponse->shouldReceive('json')
@@ -539,8 +528,8 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function itShouldThrowAnOrderNotFoundExceptionWhenGettingAnOrder()
     {
-        $request = m::mock('GuzzleHttp\Message\Request');
-        $response = m::mock('GuzzleHttp\Message\Response');
+        $request = m::mock('GuzzleHttp\Psr7\Request');
+        $response = m::mock('GuzzleHttp\Psr7\Response');
         $response->shouldReceive('getStatusCode')->andReturn(404);
 
         $this->httpClient->shouldReceive('get')
@@ -556,7 +545,7 @@ final class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function itShouldThrowAClientExceptionWhenGettingAnOrder()
     {
-        $request = m::mock('GuzzleHttp\Message\Request');
+        $request = m::mock('GuzzleHttp\Psr7\Request');
 
         $this->httpClient->shouldReceive('get')
             ->once()
