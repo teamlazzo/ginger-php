@@ -41,8 +41,18 @@ final class Client
     {
         $this->setDefaultOption(
             'verify',
-            realpath(dirname(__FILE__).'/../assets/cacert.pem')
+            realpath(dirname(__FILE__) . '/../assets/cacert.pem')
         );
+    }
+
+    /**
+     * @param $key
+     * @param $value
+     * @todo handle array values
+     */
+    private function setDefaultOption($key, $value)
+    {
+        $this->defaultOptions[$key] = $value;
     }
 
     /**
@@ -53,12 +63,16 @@ final class Client
     public function getIdealIssuers()
     {
         try {
+            $response = $this->httpClient->get('ideal/issuers/', $this->defaultOptions);
             return Issuers::fromArray(
-                $this->httpClient->get('ideal/issuers/', $this->defaultOptions)->json()
+                \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+                )
             );
         } catch (RequestException $exception) {
             throw new ClientException(
-                'An error occurred while processing the request: '.$exception->getMessage(),
+                'An error occurred while processing the request: ' . $exception->getMessage(),
                 $exception->getCode(),
                 $exception
             );
@@ -91,7 +105,8 @@ final class Client
         $customer = null,
         $extra = null,
         $webhookUrl = null
-    ) {
+    )
+    {
         return $this->postOrder(
             Order::createWithIdeal(
                 $amount,
@@ -106,6 +121,40 @@ final class Client
                 $webhookUrl
             )
         );
+    }
+
+    /**
+     * Post a new order.
+     *
+     * @param Order $order
+     * @return Order
+     */
+    private function postOrder(Order $order)
+    {
+        try {
+            $options = [
+                'timeout' => 3,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => json_encode(
+                    ArrayFunctions::withoutNullValues($order->toArray())
+                )
+            ];
+            $response = $this->httpClient->post(
+                'orders/',
+                $options + $this->defaultOptions
+            );
+        } catch (RequestException $exception) {
+            throw new ClientException(
+                'An error occurred while posting the order: ' . $exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
+        }
+
+        return Order::fromArray(\GuzzleHttp\json_decode(
+            $response->getBody(),
+            $assoc = true
+        ));
     }
 
     /**
@@ -134,7 +183,8 @@ final class Client
         $customer = null,
         $extra = null,
         $webhookUrl = null
-    ) {
+    )
+    {
         return $this->postOrder(
             Order::createWithSepa(
                 $amount,
@@ -177,7 +227,8 @@ final class Client
         $customer = null,
         $extra = null,
         $webhookUrl = null
-    ) {
+    )
+    {
         return $this->postOrder(
             Order::createWithSofort(
                 $amount,
@@ -218,7 +269,8 @@ final class Client
         $customer = null,
         $extra = null,
         $webhookUrl = null
-    ) {
+    )
+    {
         return $this->postOrder(
             Order::createWithCreditCard(
                 $amount,
@@ -258,7 +310,8 @@ final class Client
         $customer = null,
         $extra = null,
         $webhookUrl = null
-    ) {
+    )
+    {
         return $this->postOrder(
             Order::createWithBancontact(
                 $amount,
@@ -303,7 +356,8 @@ final class Client
         $customer = null,
         $extra = null,
         $webhookUrl = null
-    ) {
+    )
+    {
         return $this->postOrder(
             Order::create(
                 $amount,
@@ -330,15 +384,19 @@ final class Client
     public function getOrder($id)
     {
         try {
+            $response = $this->httpClient->get("orders/$id", $this->defaultOptions);
             return Order::fromArray(
-                $this->httpClient->get("orders/$id", $this->defaultOptions)->json()
+                \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+                )
             );
         } catch (RequestException $exception) {
             if ($exception->getCode() == 404) {
                 throw new OrderNotFoundException('No order with that ID was found.', 404, $exception);
             }
             throw new ClientException(
-                'An error occurred while getting the order: '.$exception->getMessage(),
+                'An error occurred while getting the order: ' . $exception->getMessage(),
                 $exception->getCode(),
                 $exception
             );
@@ -357,37 +415,6 @@ final class Client
     }
 
     /**
-     * Post a new order.
-     *
-     * @param Order $order
-     * @return Order
-     */
-    private function postOrder(Order $order)
-    {
-        try {
-            $options = [
-                'timeout' => 3,
-                'headers' => ['Content-Type' => 'application/json'],
-                'body' => json_encode(
-                    ArrayFunctions::withoutNullValues($order->toArray())
-                )
-            ];
-            $response = $this->httpClient->post(
-                'orders/',
-                $options + $this->defaultOptions
-            );
-        } catch (RequestException $exception) {
-            throw new ClientException(
-                'An error occurred while posting the order: '.$exception->getMessage(),
-                $exception->getCode(),
-                $exception
-            );
-        }
-
-        return Order::fromArray($response->json());
-    }
-
-    /**
      * PUT order data to Ginger API.
      *
      * @param Order $order
@@ -400,31 +427,26 @@ final class Client
                 "timeout" => 3,
                 "json" => ArrayFunctions::withoutNullValues($order->toArray())
             ];
+            $response = $this->httpClient->put(
+                "orders/" . $order->id() . "/",
+                $options + $this->defaultOptions
+            );
+
             return Order::fromArray(
-                $this->httpClient->put(
-                    "orders/".$order->id()."/",
-                    $options + $this->defaultOptions
-                )->json()
+                \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+                )
             );
         } catch (RequestException $exception) {
             if ($exception->getCode() == 404) {
                 throw new OrderNotFoundException('No order with that ID was found.', 404, $exception);
             }
             throw new ClientException(
-                'An error occurred while updating the order: '.$exception->getMessage(),
+                'An error occurred while updating the order: ' . $exception->getMessage(),
                 $exception->getCode(),
                 $exception
             );
         }
-    }
-
-    /**
-     * @param $key
-     * @param $value
-     * @todo handle array values
-     */
-    private function setDefaultOption($key, $value)
-    {
-        $this->defaultOptions[$key] = $value;
     }
 }
