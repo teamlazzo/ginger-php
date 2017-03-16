@@ -129,7 +129,7 @@ final class Client
      * @param Order $order
      * @return Order
      */
-    private function postOrder(Order $order)
+    public function postOrder(Order $order)
     {
         try {
             $options = [
@@ -384,7 +384,7 @@ final class Client
     public function getOrder($id)
     {
         try {
-            $response = $this->httpClient->get("orders/$id", $this->defaultOptions);
+            $response = $this->httpClient->get("orders/$id/", $this->defaultOptions);
             return Order::fromArray(
                 \GuzzleHttp\json_decode(
                     $response->getBody(),
@@ -413,6 +413,7 @@ final class Client
     {
         return $this->putOrder($order);
     }
+
 
     /**
      * PUT order data to Ginger API.
