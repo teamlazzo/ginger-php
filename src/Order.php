@@ -370,6 +370,64 @@ final class Order
     }
 
     /**
+     * Create a new Order.
+     *
+     * @param integer $amount Amount in cents.
+     * @param string $currency A valid currency code.
+     * @param string $paymentMethod The payment method to use.
+     * @param array $paymentMethodDetails An array of extra payment method details.
+     * @param string $description A description of the order.
+     * @param string $merchantOrderId A merchant-defined order identifier.
+     * @param string $returnUrl The return URL.
+     * @param string $expirationPeriod The expiration period as an ISO 8601 duration
+     * @param array $customer Customer information.
+     * @param array $extra Extra information.
+     * @param string $webhookUrl The webhook URL.
+     *
+     * @return Order
+     */
+    public static function createForProject(
+        Uuid $projectId,
+        $amount,
+        $currency,
+        $paymentMethod,
+        array $paymentMethodDetails = [],
+        $description = null,
+        $merchantOrderId = null,
+        $returnUrl = null,
+        $expirationPeriod = null,
+        $customer = null,
+        $extra = null,
+        $webhookUrl = null
+    ) {
+        return new static(
+            Transactions::fromArray(
+                [
+                    [
+                        'payment_method' => $paymentMethod,
+                        'payment_method_details' => $paymentMethodDetails
+                    ]
+                ]
+            ),
+            Amount::fromInteger($amount),
+            Currency::fromString($currency),
+            ($description !== null) ? Description::fromString($description) : null,
+            ($merchantOrderId !== null) ? MerchantOrderId::fromString($merchantOrderId) : null,
+            ($returnUrl !== null) ? Url::fromString($returnUrl) : null,
+            ($expirationPeriod !== null) ? new \DateInterval($expirationPeriod) : null,
+            null,
+            $projectId,
+            null,
+            null,
+            null,
+            null,
+            ($customer !== null) ? Customer::fromArray($customer) : null,
+            ($extra !== null) ? Extra::fromArray($extra) : null,
+            ($webhookUrl !== null) ? Url::fromString($webhookUrl) : null
+        );
+    }
+
+    /**
      * @param array $order
      * @return Order
      */
