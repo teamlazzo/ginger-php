@@ -31,13 +31,27 @@ class GingerService
         $this->apiKey = $apiKey;
     }
 
-    public function createClient() {
+    public function createClient()
+    {
         return Ginger::createClient($this->apiKey);
     }
 
-    public function createPartnerClient() {
+    public function createPartnerClient()
+    {
         return Ginger::createPartnerClient($this->apiKey);
     }
 
+    /**
+     * @return array
+     */
+    public function getPaymentMethods()
+    {
+        $methods = [];
+
+        $ginger = Ginger::createClient($this->apiKey);
+        $methods['ideal'] = $ginger->getIdealIssuers();
+
+        return $methods;
+    }
 
 }
