@@ -15,6 +15,7 @@ namespace GingerPayments\Payment;
 use GuzzleHttp\Client as HttpClient;
 use GingerPayments\Payment\Client\ClientException;
 use GingerPayments\Payment\Client\MerchantNotFoundException;
+use GingerPayments\Payment\Common\ArrayFunctions;
 use GuzzleHttp\Exception\RequestException;
 /**
  * class PartnerClient
@@ -101,6 +102,62 @@ class PartnerClient
             );
         }
     }
+
+    /**
+     * Get a single merchant.
+     *
+     * @param string $id The merchant ID.
+     * @return array
+     *
+     * @todo return Partner object instead of array
+     */
+    public function getPartner($id)
+    {
+        try {
+            $response = $this->httpClient->get("partners/$id/", $this->defaultOptions);
+            return \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+            );
+        } catch (RequestException $exception) {
+            if ($exception->getCode() == 404) {
+                throw new MerchantNotFoundException('No partner with that ID was found.', 404, $exception);
+            }
+            throw new ClientException(
+                'An error occurred while getting the partner: ' . $exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    /**
+     * Get a single merchant.
+     *
+     * @param string $id The merchant ID.
+     * @return array
+     *
+     * @todo return Partner object instead of array
+     */
+    public function getMerchants($id)
+    {
+        try {
+            $response = $this->httpClient->get("partners/$id/merchants/", $this->defaultOptions);
+            return \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+            );
+        } catch (RequestException $exception) {
+            if ($exception->getCode() == 404) {
+                throw new MerchantNotFoundException('No partner with that ID was found.', 404, $exception);
+            }
+            throw new ClientException(
+                'An error occurred while getting the merchants: ' . $exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
+        }
+    }
     /**
      * Get a list of projects.
      *
@@ -113,6 +170,44 @@ class PartnerClient
     {
         try {
             $response = $this->httpClient->get("merchants/$id/projects/", $this->defaultOptions);
+            return \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+            );
+        } catch (RequestException $exception) {
+            if ($exception->getCode() == 404) {
+                throw new MerchantNotFoundException('No merchant with that ID was found.', 404, $exception);
+            }
+            throw new ClientException(
+                'An error occurred while getting the merchant: ' . $exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    /**
+     * Get a list of projects.
+     *
+     * @param string $id The merchant ID.
+     * @return array
+     *
+     * @todo return Merchant object instead of array
+     */
+    public function createMerchant($id, array $data)
+    {
+        try {
+
+            $options = [
+                            'timeout' => 3,
+                            'headers' => ['Content-Type' => 'application/json'],
+                            'body' => json_encode(
+                                ArrayFunctions::withoutNullValues($data)
+                            )
+                        ];
+
+            $response = $this->httpClient->post("partners/$id/merchant/", $this->defaultOptions + $options);
+
             return \GuzzleHttp\json_decode(
                     $response->getBody(),
                     $assoc = true

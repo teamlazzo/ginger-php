@@ -31,6 +31,13 @@ class GingerService
         $this->apiKey = $apiKey;
     }
 
+    public function updateApiKey($apiKey)
+    {
+        $this->apiKey = $apiKey;
+
+        return $this;
+    }
+
     public function createClient()
     {
         return Ginger::createClient($this->apiKey);
