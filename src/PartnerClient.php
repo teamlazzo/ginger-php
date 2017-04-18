@@ -104,6 +104,34 @@ class PartnerClient
     }
 
     /**
+     * List merchant Projects.
+     *
+     * @param string $id The merchant ID.
+     * @return array
+     *
+     * @todo return Merchant object instead of array
+     */
+    public function getProjects($id)
+    {
+        try {
+            $response = $this->httpClient->get("merchants/$id/projects/", $this->defaultOptions);
+            return \GuzzleHttp\json_decode(
+                    $response->getBody(),
+                    $assoc = true
+            );
+        } catch (RequestException $exception) {
+            if ($exception->getCode() == 404) {
+                throw new MerchantNotFoundException('No merchant with that ID was found.', 404, $exception);
+            }
+            throw new ClientException(
+                'An error occurred while getting the merchant: ' . $exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    /**
      * Get a single merchant.
      *
      * @param string $id The merchant ID.
@@ -153,33 +181,6 @@ class PartnerClient
             }
             throw new ClientException(
                 'An error occurred while getting the merchants: ' . $exception->getMessage(),
-                $exception->getCode(),
-                $exception
-            );
-        }
-    }
-    /**
-     * Get a list of projects.
-     *
-     * @param string $id The merchant ID.
-     * @return array
-     *
-     * @todo return Merchant object instead of array
-     */
-    public function getProjects($id)
-    {
-        try {
-            $response = $this->httpClient->get("merchants/$id/projects/", $this->defaultOptions);
-            return \GuzzleHttp\json_decode(
-                    $response->getBody(),
-                    $assoc = true
-            );
-        } catch (RequestException $exception) {
-            if ($exception->getCode() == 404) {
-                throw new MerchantNotFoundException('No merchant with that ID was found.', 404, $exception);
-            }
-            throw new ClientException(
-                'An error occurred while getting the merchant: ' . $exception->getMessage(),
                 $exception->getCode(),
                 $exception
             );
